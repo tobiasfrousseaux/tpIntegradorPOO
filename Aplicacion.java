@@ -1,14 +1,11 @@
 package Main;
 
 import javax.swing.*;
-
 import Main.Modelos.Asistente;
 import Main.Modelos.Evento;
 import Main.Modelos.GestorEventos;
-
-import javax.swing.*;
+import Main.Modelos.Recurso;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
@@ -16,7 +13,7 @@ public class Aplicacion {
     private static GestorEventos gestorEventos = new GestorEventos();
 
     public static void main(String[] args) {
-        gestorEventos.cargarEventos();  // Carga los eventos desde el almacenamiento (ej. archivo o base de datos)
+        gestorEventos.cargarEventos();
         SwingUtilities.invokeLater(Aplicacion::createUI);
     }
 
@@ -25,41 +22,35 @@ public class Aplicacion {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(600, 400);
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout());
 
-        // Título de la interfaz con estilo minimalista
         JLabel titleLabel = new JLabel("Eventos Próximos", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Helvetica Neue", Font.BOLD, 18));
         titleLabel.setForeground(Color.DARK_GRAY);
         panel.add(titleLabel, BorderLayout.NORTH);
 
-        // Lista de eventos próximos
+        // Lista de próximos eventos (seteado de fecha de hoy a 3 meses en adelante)
         JList<String> eventosList = new JList<>();
         DefaultListModel<String> listModel = new DefaultListModel<>();
         eventosList.setModel(listModel);
-        
-        // Filtrar eventos de aquí a 3 meses
+
         Calendar calendar = Calendar.getInstance();
         Date currentDate = calendar.getTime();
         calendar.add(Calendar.MONTH, 3);
         Date threeMonthsLater = calendar.getTime();
-        
+
+        // For para filtrar eventos que no son futuros de aca a 3 meses
         for (Evento evento : gestorEventos.getEventos()) {
             if (evento.getFecha().after(currentDate) && evento.getFecha().before(threeMonthsLater)) {
                 listModel.addElement(evento.getNombre() + " - " + evento.getFecha());
             }
         }
 
-        // Scroll para la lista de eventos
         JScrollPane scrollPane = new JScrollPane(eventosList);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Botones
-        JPanel buttonsPanel = new JPanel();
-        buttonsPanel.setLayout(new FlowLayout());
+        JPanel buttonsPanel = new JPanel(new FlowLayout());
 
-        // Botón para agregar un nuevo evento
         JButton addEventButton = new JButton("Agregar Evento");
         addEventButton.setBackground(new Color(0x00796B));
         addEventButton.setForeground(Color.WHITE);
@@ -67,7 +58,6 @@ public class Aplicacion {
         addEventButton.addActionListener(e -> agregarEvento());
         buttonsPanel.add(addEventButton);
 
-        // Botón para ver todos los eventos
         JButton viewAllButton = new JButton("Ver Todos los Eventos");
         viewAllButton.setBackground(new Color(0x00796B));
         viewAllButton.setForeground(Color.WHITE);
@@ -77,16 +67,13 @@ public class Aplicacion {
 
         panel.add(buttonsPanel, BorderLayout.SOUTH);
 
-        // Mostrar la interfaz
         frame.add(panel);
         frame.setVisible(true);
     }
 
     private static void agregarEvento() {
-        // Ventana para agregar un evento nuevo
         JFrame frame = new JFrame("Agregar Evento");
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(5, 2));
+        JPanel panel = new JPanel(new GridLayout(5, 2));
         panel.setBackground(Color.WHITE);
 
         JLabel nameLabel = new JLabel("Nombre del evento:");
@@ -120,7 +107,7 @@ public class Aplicacion {
                 Date date = sdf.parse(dateStr);
                 String location = locationField.getText();
                 String description = descriptionField.getText();
-                
+
                 Evento evento = new Evento(name, date, location, description);
                 gestorEventos.agregarEvento(evento);
                 JOptionPane.showMessageDialog(frame, "Evento agregado con éxito.");
@@ -129,31 +116,33 @@ public class Aplicacion {
                 JOptionPane.showMessageDialog(frame, "Error al agregar el evento.");
             }
         });
-        
+
         panel.add(submitButton);
-        
+
         frame.add(panel);
         frame.setSize(300, 200);
         frame.setVisible(true);
     }
 
     private static void verTodosEventos() {
-        // Ventana para ver todos los eventos y permitir editarlos/agregar participantes
         JFrame frame = new JFrame("Todos los Eventos");
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(Color.WHITE);
 
         for (Evento evento : gestorEventos.getEventos()) {
-            JLabel eventoLabel = new JLabel(evento.toString());
-            panel.add(eventoLabel);
+            JPanel eventPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            JLabel eventLabel = new JLabel(evento.getNombre() + " - " + new SimpleDateFormat("dd/MM/yyyy").format(evento.getFecha()));
+            eventPanel.add(eventLabel);
 
-            JButton editButton = new JButton("Editar");
-            editButton.setBackground(new Color(0x00796B));
-            editButton.setForeground(Color.WHITE);
-            editButton.setFocusPainted(false);
-            editButton.addActionListener(e -> editarEvento(evento));
-            panel.add(editButton);
+            JButton detailsButton = new JButton("Ver Detalles");
+            detailsButton.setBackground(new Color(0x00796B));
+            detailsButton.setForeground(Color.WHITE);
+            detailsButton.setFocusPainted(false);
+            detailsButton.addActionListener(e -> verDetallesEvento(evento));
+            eventPanel.add(detailsButton);
+
+            panel.add(eventPanel);
         }
 
         JScrollPane scrollPane = new JScrollPane(panel);
@@ -162,34 +151,29 @@ public class Aplicacion {
         frame.setVisible(true);
     }
 
-    private static void editarEvento(Evento evento) {
-        // Ventana para editar los atributos de un evento
-        JFrame frame = new JFrame("Editar Evento");
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(6, 2));
+    private static void verDetallesEvento(Evento evento) {
+        JFrame frame = new JFrame("Detalles del Evento");
+        JPanel panel = new JPanel(new GridLayout(8, 2));
         panel.setBackground(Color.WHITE);
-        
-        JLabel nameLabel = new JLabel("Nombre del evento:");
-        JTextField nameField = new JTextField(evento.getNombre());
-        panel.add(nameLabel);
-        panel.add(nameField);
 
-        JLabel dateLabel = new JLabel("Fecha (dd/MM/yyyy):");
-        JTextField dateField = new JTextField(new SimpleDateFormat("dd/MM/yyyy").format(evento.getFecha()));
-        panel.add(dateLabel);
-        panel.add(dateField);
+        panel.add(new JLabel("Nombre del evento:"));
+        panel.add(new JLabel(evento.getNombre()));
 
-        JLabel locationLabel = new JLabel("Ubicación:");
-        JTextField locationField = new JTextField(evento.getUbicacion());
-        panel.add(locationLabel);
-        panel.add(locationField);
+        panel.add(new JLabel("Fecha:"));
+        panel.add(new JLabel(new SimpleDateFormat("dd/MM/yyyy").format(evento.getFecha())));
 
-        JLabel descriptionLabel = new JLabel("Descripción:");
-        JTextField descriptionField = new JTextField(evento.getDescripcion());
-        panel.add(descriptionLabel);
-        panel.add(descriptionField);
+        panel.add(new JLabel("Ubicación:"));
+        panel.add(new JLabel(evento.getUbicacion()));
 
-        // Botón para agregar un participante dentro del formulario de edición
+        panel.add(new JLabel("Descripción:"));
+        panel.add(new JLabel(evento.getDescripcion()));
+
+        panel.add(new JLabel("Asistentes:"));
+        panel.add(new JLabel(evento.getAsistentes().toString()));
+
+        panel.add(new JLabel("Recursos:"));
+        panel.add(new JLabel(evento.getRecursos().toString()));
+
         JButton addAttendeeButton = new JButton("Agregar Participante");
         addAttendeeButton.setBackground(new Color(0x00796B));
         addAttendeeButton.setForeground(Color.WHITE);
@@ -197,70 +181,70 @@ public class Aplicacion {
         addAttendeeButton.addActionListener(e -> agregarParticipante(evento));
         panel.add(addAttendeeButton);
 
-        JButton submitButton = new JButton("Guardar Cambios");
-        submitButton.setBackground(new Color(0x00796B));
-        submitButton.setForeground(Color.WHITE);
-        submitButton.addActionListener(e -> {
-            try {
-                String name = nameField.getText();
-                String dateStr = dateField.getText();
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-                Date date = sdf.parse(dateStr);
-                String location = locationField.getText();
-                String description = descriptionField.getText();
-                
-                evento.setNombre(name);
-                evento.setFecha(date);
-                evento.setUbicacion(location);
-                evento.setDescripcion(description);
-                JOptionPane.showMessageDialog(frame, "Evento actualizado.");
-                frame.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame, "Error al actualizar el evento.");
-            }
-        });
-        
-        panel.add(submitButton);
-        
+        JButton addResourceButton = new JButton("Agregar Recurso");
+        addResourceButton.setBackground(new Color(0x00796B));
+        addResourceButton.setForeground(Color.WHITE);
+        addResourceButton.setFocusPainted(false);
+        addResourceButton.addActionListener(e -> agregarRecurso(evento));
+        panel.add(addResourceButton);
+
+        JButton editEventButton = new JButton("Editar Evento");
+        editEventButton.setBackground(new Color(0x00796B));
+        editEventButton.setForeground(Color.WHITE);
+        editEventButton.addActionListener(e -> editarEvento(evento));
+        panel.add(editEventButton);
+
         frame.add(panel);
-        frame.setSize(300, 300);
+        frame.setSize(400, 300);
         frame.setVisible(true);
     }
 
     private static void agregarParticipante(Evento evento) {
-        // Ventana para agregar un participante a un evento
-        JFrame frame = new JFrame("Agregar Participante");
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(3, 2));
-        panel.setBackground(Color.WHITE);
-
-        JLabel nameLabel = new JLabel("Nombre del asistente:");
-        JTextField nameField = new JTextField();
-        panel.add(nameLabel);
-        panel.add(nameField);
-
-        JLabel emailLabel = new JLabel("Correo del asistente:");
-        JTextField emailField = new JTextField();
-        panel.add(emailLabel);
-        panel.add(emailField);
-
-        JButton submitButton = new JButton("Agregar Participante");
-        submitButton.setBackground(new Color(0x00796B));
-        submitButton.setForeground(Color.WHITE);
-        submitButton.setFocusPainted(false);
-        submitButton.addActionListener(e -> {
-            String name = nameField.getText();
-            String email = emailField.getText();
-            Asistente asistente = new Asistente(name, email);
-            evento.registrarAsistente(asistente);
-            JOptionPane.showMessageDialog(frame, "Participante agregado.");
-            frame.dispose();
-        });
-        
-        panel.add(submitButton);
-        
-        frame.add(panel);
-        frame.setSize(300, 200);
-        frame.setVisible(true);
+        String nombre = JOptionPane.showInputDialog("Ingrese nombre y apellido del participante:");
+        String email = JOptionPane.showInputDialog("Ingrese email del participante:");
+        if (nombre != null && !nombre.trim().isEmpty()) {
+            Asistente asistente = new Asistente(nombre, email);
+            gestorEventos.registrarAsistenteEnEvento(evento, asistente);
+            JOptionPane.showMessageDialog(null, "Participante agregado correctamente.");
+        } else {
+            JOptionPane.showMessageDialog(null, "Nombre inválido.");
+        }
     }
+
+    private static void agregarRecurso(Evento evento) {
+        String nombre = JOptionPane.showInputDialog("Ingrese tipo de recurso:");
+        String descripcion = JOptionPane.showInputDialog("Ingrese descripcion del recurso:");
+        if (nombre != null && !nombre.trim().isEmpty()) {
+            Recurso recurso = new Recurso(nombre, descripcion);
+            gestorEventos.asignarRecursoAEvento(evento, recurso);
+            JOptionPane.showMessageDialog(null, "Recurso agregado correctamente.");
+        } else {
+            JOptionPane.showMessageDialog(null, "Nombre inválido.");
+        }
+    }
+
+    private static void editarEvento(Evento evento) {
+        // Obtener los nuevos valores del evento
+        String nuevoNombre = JOptionPane.showInputDialog("Ingrese el nuevo nombre del evento:", evento.getNombre());
+        String nuevaFecha = JOptionPane.showInputDialog("Ingrese la nueva fecha del evento (dd/MM/yyyy):", evento.getFecha());
+        String nuevaUbicacion = JOptionPane.showInputDialog("Ingrese la nueva ubicación del evento:", evento.getUbicacion());
+        String nuevaDescripcion = JOptionPane.showInputDialog("Ingrese la nueva descripción del evento:", evento.getDescripcion());
+
+        try {
+            // Convertir la fecha de String a Date
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            Date date = sdf.parse(nuevaFecha);
+
+            // Setear los nuevos valores del evento
+            evento.setNombre(nuevoNombre);
+            evento.setFecha(date);
+            evento.setUbicacion(nuevaUbicacion);
+            evento.setDescripcion(nuevaDescripcion);
+
+            JOptionPane.showMessageDialog(null, "Evento editado correctamente.");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error al editar la fecha. Asegúrese de ingresar la fecha en formato dd/MM/yyyy.");
+        }
+    }
+
 }

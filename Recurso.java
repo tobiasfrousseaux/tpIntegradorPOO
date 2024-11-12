@@ -13,4 +13,12 @@ public class Recurso {
     public String toString() {
         return tipo + " - " + descripcion;
     }
+
+	public String getDescripcion() {
+		return this.descripcion;
+	}
+
+	public String getTipo() {
+		return this.tipo;
+	}
 }

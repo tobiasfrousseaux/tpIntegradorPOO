@@ -37,10 +37,9 @@ public class Evento {
 
     @Override
     public String toString() {
-        return "Evento: " + nombre + " | Fecha: " + fecha + " | Ubicación: " + ubicacion + " | Asistentes: " + asistentes.size();
+        return "Evento: " + nombre + " | Fecha: " + fecha + " | Ubicación: " + ubicacion + " | Cantidad de asistentes: " + asistentes.size();
     }
 
-    // Métodos get corregidos
     public String getNombre() {
         return nombre;
     }
